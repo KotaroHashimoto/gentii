@@ -72,11 +72,12 @@ if __name__ == '__main__':
         maxName = ''
         msg = ''
 
-        # 価格が最も開いている取引所を調べる
         for e in base:
-            
             while e.p == 0:
                 e.update()
+
+        # 価格が最も開いている取引所を調べる
+        for e in base:
 
             # 最安値の取引所と価格
             if e.p < minp:
@@ -92,6 +93,9 @@ if __name__ == '__main__':
             for et in base:
                 if Price_Diff_To_Alert < abs(e.p - et.p) and et.p < e.p:
                     msg += e.name + '(' + str(e.p) + ') - ' + et.name + '(' + str(et.p) + '), 価格差:' + str(e.p - et.p) + '円    '
+
+        for e in base:
+            e.p = 0
 
         # 最も価格差が開いていた取引所
         sbj = maxName + ' - ' + minName + ', 価格差:' + str(maxp - minp) + '円'
