@@ -14,6 +14,11 @@ Max_BTC_Trade_Amount = 0.1
 Mask_After_Trade_Sec = 5
 
 
+# 各口座に残しておく最低のJPY, BTC量
+Min_JPY_Amount = 10000
+Min_BTC_Amount = 0.02
+
+
 # bitFlyer APIキー
 BF_Key = ''
 
@@ -216,14 +221,14 @@ class Position:
     def checkFund(self, op, amount, bask, cask):
 
         if 'Sell bitFlyer' == op:
-            if BF.BTC < amount or CC.JPY < amount * cask[0]:
+            if BF.BTC - Min_BTC_Amount < amount or CC.JPY - Min_JPY_Amount < amount * cask[0]:
                 return False
             else:
                 return True
 
         elif 'Buy bitFlyer' == op:
 
-            if BF.JPY < amount * bask[0] or CC.BTC < amount:
+            if BF.JPY - Min_JPY_Amount < amount * bask[0] or CC.BTC - Min_BTC_Amount < amount:
                 return False
             else:
                 return True
