@@ -4,8 +4,15 @@
 # QUOINEX / Coincheck がこの数値％以上となったら QUOINEX BTC売り、Coincheck BTC買い
 SellQN_BuyCC_Percentage = 1
 
+# QUOINEX / Coincheck がこの数値％以下となったら QUOINEX BTC売り、Coincheck BTC買い ポジションのクローズ
+Close_SellQN_BuyCC_Percentage = 0
+
 # QUOINEX / Coincheck がこの数値％以下となったら QUOINEX BTC買い、Coincheck BTC売り
 BuyQN_SellCC_Percentage = -1
+
+# QUOINEX / Coincheck がこの数値％以上となったら QUOINEX BTC買い、Coincheck BTC売り ポジションのクローズ
+Close_BuyQN_SellCC_Percentage = 0
+
 
 # １回に取引するBTCの枚数
 BTC_Trade_Amount = 1.0
@@ -265,16 +272,29 @@ class Position:
         return (' (+' if 0 < Position.DIFF else ' (') + str(round(Position.DIFF, 2)) + '%) '
 
 
-    def operation(self, qask, qbid, cask, cbid):
+    def operation(self, qask, qbid, cask, cbid, cc_side):
 
-        if BuyQN_SellCC_Percentage < Position.DIFF and Position.DIFF < SellQN_BuyCC_Percentage:
-            return (None, 0)
+        if cc_side == '':
+            if BuyQN_SellCC_Percentage < Position.DIFF and Position.DIFF < SellQN_BuyCC_Percentage:
+                return (None, 0)
 
-        elif SellQN_BuyCC_Percentage <= Position.DIFF:
-            return ('Sell Quoine', round(min(qbid[1], cask[1]), 3))
+            elif SellQN_BuyCC_Percentage <= Position.DIFF:
+                return ('Sell Quoine', round(min(qbid[1], cask[1]), 3))
 
-        elif Position.DIFF <= BuyQN_SellCC_Percentage:
-            return ('Buy Quoine', round(min(qask[1], cbid[1]), 3))
+            elif Position.DIFF <= BuyQN_SellCC_Percentage:
+                return ('Buy Quoine', round(min(qask[1], cbid[1]), 3))
+
+        elif cc_side == 'buy':
+            if Position.DIFF <= Close_SellQN_BuyCC_Percentage:
+                return ('Buy Quoine', round(min(qask[1], cbid[1]), 3))
+            else:
+                return (None, 0)
+
+        elif cc_side == 'sell':
+            if Close_BuyQN_SellCC_Percentage <= Position.DIFF:
+                return ('Sell Quoine', round(min(qbid[1], cask[1]), 3))
+            else:
+                return (None, 0)
 
 
     def checkFund(self, op, amount, qask, cask):
@@ -300,20 +320,20 @@ if __name__ == '__main__':
 
             print(q + d + c, end = '\r')
 
-            op, amount = pos.operation(qn.ask, qn.bid, cc.ask, cc.bid)
-            if pos.checkFund(op, amount, qn.ask, cc.ask):
-                (id, side, amount) = cc.getPosID()
+            (id, cc_side, cc_amount) = cc.getPosID()
+            op, amount = pos.operation(qn.ask, qn.bid, cc.ask, cc.bid, cc_side)
+            if True: #pos.checkFund(op, amount, qn.ask, cc.ask):
 
-                if op == 'Sell Quoine' and side != 'buy':
+                if op == 'Sell Quoine' and cc_side != 'buy':
                     print('\nSell Quoine BTC, Buy Coincheck BTC: ' + str(amount)  + '\n')
-                    print(cc.buy(id, side, amount))
+                    print(cc.buy(id, side, cc_amount))
                     print(qn.sell(BTC_Trade_Amount))
                     time.sleep(Mask_After_Trade_Sec)
 
-                elif op == 'Buy Quoine' and side != 'sell':
+                if op == 'Buy Quoine' and cc_side != 'sell':
                     print('\nBuy QUoine BTC, Sell Coincheck, BTC: ' + str(amount)  + '\n')
-                    print(cc.buy(id, side, amount))
-                    print(qn.sell(BTC_Trade_Amount))
+                    print(cc.sell(id, side, cc_amount))
+                    print(qn.buy(BTC_Trade_Amount))
                     time.sleep(Mask_After_Trade_Sec)
 
             else:
@@ -322,5 +342,5 @@ if __name__ == '__main__':
             time.sleep(1.5)
 
         except Exception as e:
-            print('\nhoge', e, '\n')
+            print('\nException', e, '\n')
             time.sleep(10)
