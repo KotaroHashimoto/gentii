@@ -75,7 +75,8 @@ class Quoine():
             self.ask = [None, None]
             self.bid = [None, None]
 
-            print("\nError %s while calling URL %s:\n" % (r.status_code,url))
+            print("Error %s while calling URL %s:" % (r.status_code,url))
+            return None
 
 
     def orderQuoine(self, side, amount):
@@ -261,7 +262,7 @@ class Position:
 
         Position.DIFF = 100 * (qn / cc - 1)
 
-        return ' (+' if 0 < Position.DIFF else ' (' + str(round(Position.DIFF, 2)) + '%) '
+        return (' (+' if 0 < Position.DIFF else ' (') + str(round(Position.DIFF, 2)) + '%) '
 
 
     def operation(self, qask, qbid, cask, cbid):
@@ -290,6 +291,10 @@ if __name__ == '__main__':
 
         try:
             q = qn.watch()
+            if not q:
+                time.sleep(1)
+                continue
+
             c = cc.watch()
             d = pos.diff(qn.ask, qn.bid, cc.ask, cc.bid)
 
@@ -317,5 +322,5 @@ if __name__ == '__main__':
             time.sleep(1.5)
 
         except Exception as e:
-            print('hoge', e)
+            print('\nhoge', e, '\n')
             time.sleep(10)
