@@ -210,10 +210,14 @@ class CC:
 
 #       print(res)
 
-        if 0 < len(res['data']):
-            id = res['data'][0]['id']
-            side = res['data'][0]['side']
-            amount = res['data'][0]['amount']
+        for c in res['data']:
+            if c['status'] != 'open':
+                continue
+
+            id = c['id']
+            side = c['side']
+            amount = c['amount']
+            break
 
         return (id, side, amount)
 
@@ -345,14 +349,21 @@ if __name__ == '__main__':
 
                 if op == 'Sell Quoine' and cc_side != 'buy':
                     print('\nSell Quoine BTC, Buy Coincheck BTC: ' + str(amount)  + '\n')
-                    print(cc.buy(id, cc_side, cc_amount))
-                    print(qn.sell(BTC_Trade_Amount))
+                    ccRet = cc.buy(id, cc_side, cc_amount)
+                    print(ccRet)
+                    if ccRet['success']:
+                        print(qn.sell(BTC_Trade_Amount))
+
                     time.sleep(Mask_After_Trade_Sec)
+
 
                 if op == 'Buy Quoine' and cc_side != 'sell':
                     print('\nBuy QUoine BTC, Sell Coincheck, BTC: ' + str(amount)  + '\n')
-                    print(cc.sell(id, cc_side, cc_amount))
-                    print(qn.buy(BTC_Trade_Amount))
+                    ccRet = cc.sell(id, cc_side, cc_amount)
+                    print(ccRet)
+                    if ccRet['success']:
+                        print(qn.buy(BTC_Trade_Amount))
+
                     time.sleep(Mask_After_Trade_Sec)
 
             else:
