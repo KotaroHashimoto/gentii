@@ -28,7 +28,6 @@ QN_Key = ''
 # QUOINEX APIシークレット
 QN_Secret = ''
 
-
 # Coincheck APIキー
 CC_Key = ''
 
@@ -54,6 +53,8 @@ class Quoine():
     token_id = None
     api_secret = None
     api_endpoint = None
+
+    timestamp = '1'
 
     def __init__(self):
 
@@ -105,16 +106,16 @@ class Quoine():
 
         path = '/orders/'
         body = dumps(order)
-        timestamp = str(int(time.time()))
-#        print(timestamp)
+
+        tm = int(time.time())
+        Quoine.timestamp = str(tm if int(Quoine.timestamp) < tm else int(Quoine.timestamp) + 1)
+
         auth_payload = {
             'path': path,
-            'nonce': timestamp,
+            'nonce': Quoine.timestamp,
             'token_id': Quoine.token_id
             }
         sign = jwt.encode(auth_payload, Quoine.api_secret, algorithm='HS256')
-
-#        print(body)
 
         response = requests.post(
             Quoine.api_endpoint+path
@@ -141,20 +142,25 @@ class Quoine():
 
 class CCApiCall:
 
+    timestamp = '1'
+
     def __init__(self):
         self.api_key = CC_Key
         self.api_secret = CC_Secret
         self.api_endpoint = 'https://coincheck.com'
 
     def get_api_call(self,path):
-        timestamp = str(int(time.time()))
-        text = timestamp + self.api_endpoint + path
+
+        tm = int(time.time())
+        CCApiCall.timestamp = str(tm if int(CCApiCall.timestamp) < tm else int(CCApiCall.timestamp) + 1)
+
+        text = CCApiCall.timestamp + self.api_endpoint + path
         sign = hmac.new(bytes(self.api_secret.encode('ascii')), bytes(text.encode('ascii')), hashlib.sha256).hexdigest()
         request_data=requests.get(
             self.api_endpoint+path
             ,headers = {
                 'ACCESS-KEY': self.api_key,
-                'ACCESS-NONCE': timestamp,
+                'ACCESS-NONCE': CCApiCall.timestamp,
                 'ACCESS-SIGNATURE': sign,
                 'Content-Type': 'application/json'
                 })
@@ -163,16 +169,17 @@ class CCApiCall:
     def post_api_call(self,path,body):
         body = dumps(body)
 
-#        print('okure', body)
-        timestamp = str(int(time.time()))
-        text = timestamp + self.api_endpoint + path + body
+        tm = int(time.time())
+        CCApiCall.timestamp = str(tm if int(CCApiCall.timestamp) < tm else int(CCApiCall.timestamp) + 1)
+
+        text = CCApiCall.timestamp + self.api_endpoint + path + body
         sign = hmac.new(bytes(self.api_secret.encode('ascii')), bytes(text.encode('ascii')), hashlib.sha256).hexdigest()
         request_data=requests.post(
             self.api_endpoint+path
             ,data= body
             ,headers = {
                 'ACCESS-KEY': self.api_key,
-                'ACCESS-NONCE': timestamp,
+                'ACCESS-NONCE': CCApiCall.timestamp,
                 'ACCESS-SIGNATURE': sign,
                 'Content-Type': 'application/json'
                 })
