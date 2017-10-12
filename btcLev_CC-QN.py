@@ -236,7 +236,7 @@ class CC:
             body = {
                 'pair': 'btc_jpy',
                 'order_type': 'leverage_sell',
-                'amount': BTC_Trade_Amount
+                'amount': str(BTC_Trade_Amount)
                 }
 
         else:
@@ -256,7 +256,7 @@ class CC:
             body = {
                 'pair': 'btc_jpy',
                 'order_type': 'leverage_buy',
-                'amount': BTC_Trade_Amount
+                'amount': str(BTC_Trade_Amount)
                 }
 
         else:
