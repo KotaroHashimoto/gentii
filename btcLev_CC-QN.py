@@ -34,6 +34,9 @@ CC_Key = ''
 # Coincheck シークレットキー
 CC_Secret = ''
 
+# ポジションを張る最低維持率
+Min_Margin_Level = 100
+
 
 from datetime import datetime
 import pybitflyer
@@ -89,6 +92,32 @@ class Quoine():
             print("Error %s while calling URL %s:" % (r.status_code,url))
             return None
 
+    def get_api_call(self, path):
+        tm = int(time.time())
+        Quoine.timestamp = str(tm if int(Quoine.timestamp) < tm else int(Quoine.timestamp) + 1)
+
+        auth_payload = {
+                'path': path,
+                'nonce': Quoine.timestamp,
+                'token_id': Quoine.token_id
+                }
+        sign = jwt.encode(auth_payload, Quoine.api_secret, algorithm='HS256')
+        request_data=requests.get(
+            Quoine.api_endpoint+path
+            ,headers = {
+                'X-Quoine-API-Version': '2',
+                'X-Quoine-Auth': sign,
+                'Content-Type': 'application/json'
+            })
+        return request_data
+
+    def mLevel(self):
+        res = self.get_api_call('/trading_accounts').json()
+        if 0 < len(res):
+            if 'equity' in res[0] and 'margin' in res[0]:
+                return 100.0 * float(res[0]['equity']) / float(res[0]['margin'])
+            
+        return 0
 
     def orderQuoine(self, side, amount):
 
@@ -192,6 +221,7 @@ class CC:
     BALANCE = '/api/accounts/balance'
     ORDER = '/api/exchange/orders'    
     POSITION = '/api/exchange/leverage/positions'
+    LEV_ACC = '/api/accounts/leverage_balance'
     
 #    public = None
     private = None
@@ -208,7 +238,8 @@ class CC:
         side = ''
         amount = -1
 
-#       print(res)
+        if not 'data' in res:
+            return (id, side, amount)
 
         for c in res['data']:
             if c['status'] != 'open':
@@ -220,6 +251,14 @@ class CC:
             break
 
         return (id, side, amount)
+
+    def mLevel(self):
+
+        res = CC.private.get_api_call(CC.LEV_ACC).json()
+        if res['success'] and 'margin_level' in res:
+            return 100.0 * float(res['margin_level'])
+        else:
+            return 0
 
     def watch(self):
 
@@ -347,7 +386,7 @@ if __name__ == '__main__':
             op, amount = pos.operation(qn.ask, qn.bid, cc.ask, cc.bid, cc_side)
             if True: #pos.checkFund(op, amount, qn.ask, cc.ask):
 
-                if op == 'Sell Quoine' and cc_side != 'buy':
+                if op == 'Sell Quoine' and Min_Margin_Level < min(cc.mLevel(), qn.mLevel()):
                     print('\nSell Quoine BTC, Buy Coincheck BTC: ' + str(amount)  + '\n')
                     ccRet = cc.buy(id, cc_side, cc_amount)
                     print(ccRet)
@@ -357,7 +396,7 @@ if __name__ == '__main__':
                     time.sleep(Mask_After_Trade_Sec)
 
 
-                if op == 'Buy Quoine' and cc_side != 'sell':
+                if op == 'Buy Quoine' and Min_Margin_Level < min(cc.mLevel(), qn.mLevel()):
                     print('\nBuy QUoine BTC, Sell Coincheck, BTC: ' + str(amount)  + '\n')
                     ccRet = cc.sell(id, cc_side, cc_amount)
                     print(ccRet)
