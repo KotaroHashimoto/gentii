@@ -109,13 +109,23 @@ class Quoine():
                 'X-Quoine-Auth': sign,
                 'Content-Type': 'application/json'
             })
+
         return request_data
 
     def mLevel(self):
         res = self.get_api_call('/trading_accounts').json()
-        if 0 < len(res):
-            if 'equity' in res[0] and 'margin' in res[0]:
-                return 100.0 * float(res[0]['equity']) / float(res[0]['margin'])
+
+#        print('Quoine 0:', res)
+#        for r in res:
+#            print('Quoine 1:', r)
+
+#        if 0 < len(res):
+        for r in res:
+            if 'equity' in r and 'margin' in r and 'currency_pair_code' in r:
+                if r['currency_pair_code'] == 'BTCJPY' and 0 != float(r['equity']):
+                    print('Quoine 0:', r)
+                    if 0 < float(r['margin']):
+                        return 100.0 * float(r['equity']) / float(r['margin'])
             
         return 0
 
@@ -255,6 +265,11 @@ class CC:
     def mLevel(self):
 
         res = CC.private.get_api_call(CC.LEV_ACC).json()
+
+        print('Coincheck 0:', res)
+#        for r in res:
+#            print('Coincheck 1:', r)
+
         if res['success'] and 'margin_level' in res:
             return 100.0 * float(res['margin_level'])
         else:
@@ -388,20 +403,20 @@ if __name__ == '__main__':
 
                 if op == 'Sell Quoine' and Min_Margin_Level < min(cc.mLevel(), qn.mLevel()):
                     print('\nSell Quoine BTC, Buy Coincheck BTC: ' + str(amount)  + '\n')
-                    ccRet = cc.buy(id, cc_side, cc_amount)
-                    print(ccRet)
-                    if ccRet['success']:
-                        print(qn.sell(BTC_Trade_Amount))
+#                    ccRet = cc.buy(id, cc_side, cc_amount)
+#                    print(ccRet)
+#                    if ccRet['success']:
+#                        print(qn.sell(BTC_Trade_Amount))
 
                     time.sleep(Mask_After_Trade_Sec)
 
 
                 if op == 'Buy Quoine' and Min_Margin_Level < min(cc.mLevel(), qn.mLevel()):
                     print('\nBuy QUoine BTC, Sell Coincheck, BTC: ' + str(amount)  + '\n')
-                    ccRet = cc.sell(id, cc_side, cc_amount)
-                    print(ccRet)
-                    if ccRet['success']:
-                        print(qn.buy(BTC_Trade_Amount))
+#                    ccRet = cc.sell(id, cc_side, cc_amount)
+#                    print(ccRet)
+#                    if ccRet['success']:
+#                        print(qn.buy(BTC_Trade_Amount))
 
                     time.sleep(Mask_After_Trade_Sec)
 
