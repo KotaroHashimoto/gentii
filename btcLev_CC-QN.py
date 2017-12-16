@@ -34,8 +34,8 @@ CC_Key = ''
 # Coincheck シークレットキー
 CC_Secret = ''
 
-# ポジションを張る最低維持率
-Min_Margin_Level = 100
+# Watch 間隔[秒]
+Watch_Interval = 2.0
 
 
 from datetime import datetime
@@ -401,29 +401,28 @@ if __name__ == '__main__':
             op, amount = pos.operation(qn.ask, qn.bid, cc.ask, cc.bid, cc_side)
             if True: #pos.checkFund(op, amount, qn.ask, cc.ask):
 
-                if op == 'Sell Quoine' and Min_Margin_Level < min(cc.mLevel(), qn.mLevel()):
+                if op == 'Sell Quoine' and cc_side != 'buy':
                     print('\nSell Quoine BTC, Buy Coincheck BTC: ' + str(amount)  + '\n')
-#                    ccRet = cc.buy(id, cc_side, cc_amount)
-#                    print(ccRet)
-#                    if ccRet['success']:
-#                        print(qn.sell(BTC_Trade_Amount))
+                    ccRet = cc.buy(id, cc_side, cc_amount)
+                    print(ccRet)
+                    if ccRet['success']:
+                        print(qn.sell(BTC_Trade_Amount))
 
                     time.sleep(Mask_After_Trade_Sec)
 
-
-                if op == 'Buy Quoine' and Min_Margin_Level < min(cc.mLevel(), qn.mLevel()):
+                if op == 'Buy Quoine' and cc_side != 'sell':
                     print('\nBuy QUoine BTC, Sell Coincheck, BTC: ' + str(amount)  + '\n')
-#                    ccRet = cc.sell(id, cc_side, cc_amount)
-#                    print(ccRet)
-#                    if ccRet['success']:
-#                        print(qn.buy(BTC_Trade_Amount))
+                    ccRet = cc.sell(id, cc_side, cc_amount)
+                    print(ccRet)
+                    if ccRet['success']:
+                        print(qn.buy(BTC_Trade_Amount))
 
                     time.sleep(Mask_After_Trade_Sec)
 
             else:
                 print('\nFunds not enough.\n')
                     
-            time.sleep(1.5)
+            time.sleep(Watch_Interval)
 
         except Exception as e:
             print('\nException', e, '\n')
